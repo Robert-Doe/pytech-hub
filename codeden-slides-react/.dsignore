@@ -1,0 +1,2 @@
+# Exclude this folder from the design system compiler.
+# This is a standalone React/Vite project — run with: npm install && npm run dev
