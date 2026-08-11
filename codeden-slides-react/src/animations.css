@@ -1,0 +1,69 @@
+/* CodeDen Slide Animations */
+@keyframes cdFadeUp {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes cdFadeLeft {
+  from { opacity: 0; transform: translateX(-56px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes cdFadeRight {
+  from { opacity: 0; transform: translateX(56px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes cdPop {
+  from { opacity: 0; transform: scale(.75); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes cdGrow {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+/* Apply animation classes */
+.anim-fade-up   { animation: cdFadeUp   .55s var(--ease, cubic-bezier(.22,1,.36,1)) both; }
+.anim-fade-left { animation: cdFadeLeft .55s var(--ease, cubic-bezier(.22,1,.36,1)) both; }
+.anim-fade-right{ animation: cdFadeRight .55s var(--ease, cubic-bezier(.22,1,.36,1)) both; }
+.anim-pop       { animation: cdPop      .55s var(--ease, cubic-bezier(.22,1,.36,1)) both; }
+.anim-grow      { animation: cdGrow     .7s  var(--ease, cubic-bezier(.22,1,.36,1)) both; transform-origin: left; }
+
+/* Delay utilities d1 = 0.15s … d40 = 6.0s. In manual step mode (default) these
+   values are irrelevant — stepEngine.js overrides animation-delay to 0s the
+   instant an element is revealed. They only matter in optional Auto-play mode,
+   where slides play through with their original staggered timing. */
+.d1{animation-delay:.15s}.d2{animation-delay:.3s}.d3{animation-delay:.45s}
+.d4{animation-delay:.6s}.d5{animation-delay:.75s}.d6{animation-delay:.9s}
+.d7{animation-delay:1.05s}.d8{animation-delay:1.2s}.d9{animation-delay:1.35s}
+.d10{animation-delay:1.5s}.d11{animation-delay:1.65s}.d12{animation-delay:1.8s}.d13{animation-delay:1.95s}.d14{animation-delay:2.1s}.d15{animation-delay:2.25s}
+.d16{animation-delay:2.4s}.d17{animation-delay:2.55s}.d18{animation-delay:2.7s}.d19{animation-delay:2.85s}.d20{animation-delay:3.0s}.d21{animation-delay:3.15s}
+.d22{animation-delay:3.3s}.d23{animation-delay:3.45s}.d24{animation-delay:3.6s}.d25{animation-delay:3.75s}.d26{animation-delay:3.9s}.d27{animation-delay:4.05s}
+.d28{animation-delay:4.2s}.d29{animation-delay:4.35s}.d30{animation-delay:4.5s}.d31{animation-delay:4.65s}.d32{animation-delay:4.8s}.d33{animation-delay:4.95s}
+.d34{animation-delay:5.1s}.d35{animation-delay:5.25s}.d36{animation-delay:5.4s}.d37{animation-delay:5.55s}.d38{animation-delay:5.7s}.d39{animation-delay:5.85s}
+.d40{animation-delay:6.0s}
+
+/* Manual step mode: elements start hidden until stepEngine.js reveals them
+   (this only matters where JS hasn't run yet — e.g. first paint of a
+   step > 1 element — the engine takes over immediately after mount). */
+.frame { opacity: 0; }
+
+/* Print / PDF export — see PdfExport.jsx. It portals directly under <body>,
+   as a sibling of #root, so this is a two-line switch: hide the whole live
+   app, show only the baked full-bleed pages. No live control or chrome
+   from the composer/presenter ever reaches the printed output. */
+@media print {
+  #root { display: none !important; }
+  .pdf-export-root { display: block !important; }
+  @page { size: 1920px 1080px; margin: 0; }
+  html, body { margin: 0 !important; padding: 0 !important; background: #000; }
+}
+@media not print {
+  .pdf-export-root { display: none !important; }
+}
+.pdf-page { width: 1920px; height: 1080px; position: relative; overflow: hidden; break-after: page; page-break-after: always; }
+.pdf-page:last-child { break-after: auto; page-break-after: auto; }
+
+/* SlideShow shell */
+.slideshow-root { width:100vw; height:100vh; background:#111; display:flex; flex-direction:column; align-items:center; justify-content:center; overflow:hidden; }
+.slide-scaler   { transform-origin: top center; }
+.slide-wrapper  { width:1920px; height:1080px; overflow:hidden; position:relative; }
+.composer-root  { background:#1a1600; min-height:100vh; font-family:'Open Sans',sans-serif; color:#fff; }
