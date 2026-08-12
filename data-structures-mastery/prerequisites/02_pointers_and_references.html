@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Pointers & References — Prerequisites</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/course.css">
+<style>:root{ --pen:#6B3FA0; }</style>
+</head>
+<body>
+<div class="sheet">
+
+  <p class="crumbs"><a href="../prerequisites.html">← Prerequisites</a></p>
+
+  <header class="masthead" style="padding-top:36px">
+    <p class="eyebrow">Prerequisite 02 of 04</p>
+    <h1>Pointers &amp; References</h1>
+    <p class="thesis">The single idea that makes every non-array data structure in this
+    course possible: a value that doesn't hold data, it holds <em>directions to</em> data.</p>
+  </header>
+
+<section class="mod" id="m01">
+  <div class="modhead"><span class="modnum">01</span><h2>The Big Analogy</h2></div>
+
+  <div class="analogy">
+    <p><strong>A sticky note with an address on it, vs. the house itself.</strong> Suppose I
+    hand you a sticky note that says <span style="background:var(--mark);padding:0 4px">"742
+    Evergreen Terrace."</span> That sticky note is not a house. It has no rooms, no furniture.
+    But it tells you exactly where to go to find one. If you drive there, knock, and repaint
+    the door, the house changes — but your sticky note is still just as valid, still says the
+    same address, and now points at a freshly painted house.</p>
+    <p>A <strong>pointer</strong> (C/C++) — or the hidden reference every Python variable
+    already is under the hood — is that sticky note. It is a small, fixed-size value (an
+    address) that tells you where to find a much larger or more important value. Copying the
+    sticky note is cheap — you're not rebuilding the house, just re-writing seven digits.
+    That's <em>the entire reason</em> linked structures (Module 05 onward) can insert a new
+    node without moving every other node: they just re-point a few sticky notes.</p>
+  </div>
+</section>
+
+<section class="mod" id="m02">
+  <div class="modhead"><span class="modnum">02</span><h2>What Happens, Step by Step</h2></div>
+
+  <div class="spec">
+    <ol>
+      <li><strong>A value is stored somewhere</strong> — call its address <code>0x1000</code>.</li>
+      <li><strong>You take its address</strong> — in C/C++, with <code>&amp;</code>
+      (<code>int *p = &amp;x;</code>). This does not copy <code>x</code>; it creates a new,
+      small value: the number <code>0x1000</code>, typed as "address of an int."</li>
+      <li><strong>You dereference the pointer</strong> — <code>*p</code> means "go to the
+      address stored in <code>p</code>, and treat what's there as an int." This is the "drive
+      to the address on the sticky note" step.</li>
+      <li><strong>A C++ reference</strong> (<code>int &amp;r = x;</code>) is a pointer with
+      the danger sanded off: it must be bound to something at creation, can never be null, and
+      never needs an explicit dereference — the compiler inserts the "go to the address" step
+      for you every time you use <code>r</code>. Same mechanism, safer interface.</li>
+      <li><strong>Python has no visible pointer syntax</strong> — but every name is already a
+      reference. <code>a = [1,2,3]; b = a</code> does not copy the list; <code>b</code> is a
+      second sticky note pointing at the same house. Mutating through <code>b</code> is
+      visible through <code>a</code>. This single fact explains almost every "why did my
+      Python list change unexpectedly" bug a beginner hits.</li>
+    </ol>
+  </div>
+</section>
+
+<section class="mod" id="m03">
+  <div class="modhead"><span class="modnum">03</span><h2>A Concrete Map of State</h2></div>
+
+  <div class="io">
+    <span class="lab">int x = 99;  int *p = &amp;x;  int **q = &amp;p;</span>
+  </div>
+  <div class="rail" style="grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)">
+    <div class="railbox">
+      <h4>addr 0x2000 — "q"</h4>
+      <p style="font-family:var(--mono);font-size:15px;margin:0">value: <strong>0x1000</strong></p>
+    </div>
+    <div class="railbox">
+      <h4>addr 0x1000 — "p"</h4>
+      <p style="font-family:var(--mono);font-size:15px;margin:0">value: <strong>0x1088</strong></p>
+    </div>
+    <div class="railbox" style="border-color:var(--good);background:var(--good-bg)">
+      <h4 style="color:var(--good)">addr 0x1088 — "x"</h4>
+      <p style="font-family:var(--mono);font-size:15px;margin:0;color:var(--good)">value: <strong>99</strong></p>
+    </div>
+  </div>
+  <p style="font-size:14.5px;color:var(--soft);margin-top:14px">q points at p. p points at x.
+  Three separate boxes. <code>*p</code> reads 99 (one hop). <code>**q</code> also reads 99
+  (two hops). Changing <code>*p</code> to 5 changes <code>x</code>. Changing <code>p</code>
+  itself would re-point it at a different int entirely — <code>x</code> is untouched.</p>
+</section>
+
+<section class="mod" id="m04">
+  <div class="modhead"><span class="modnum">04</span><h2>Per-Language Reality Check</h2></div>
+
+  <div class="tblwrap">
+  <table>
+    <thead><tr><th></th><th>C</th><th>C++</th><th>Python</th></tr></thead>
+    <tbody>
+      <tr><td>Syntax to "point at" a value</td><td><code>int *p = &amp;x;</code></td><td><code>int *p = &amp;x;</code> or <code>int &amp;r = x;</code></td><td>implicit — every variable already is one</td></tr>
+      <tr><td>Can it point at nothing?</td><td>Yes — <code>NULL</code></td><td>Pointers: yes (<code>nullptr</code>). References: no, never.</td><td>Yes — <code>None</code></td></tr>
+      <tr><td>Can you re-point it later?</td><td>Yes</td><td>Pointers: yes. References: no, bound for life.</td><td>Yes — reassignment just re-binds the name</td></tr>
+      <tr><td>Manual dereference syntax?</td><td>Yes, <code>*p</code></td><td>Pointers: yes. References: no, automatic.</td><td>No, always automatic</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section class="mod" id="m05">
+  <div class="modhead"><span class="modnum">05</span><h2>Limits of This Page</h2></div>
+
+  <div class="compare">
+    <div class="cant">
+      <h4>Not covered here</h4>
+      <ul>
+        <li>Pointer arithmetic on arrays (earned in Module 01/02, where there's a real array to walk)</li>
+        <li>Dangling pointers / use-after-free (earned once Module 05's linked list can delete a node)</li>
+        <li>Smart pointers (<code>unique_ptr</code>, <code>shared_ptr</code>) — a deliberate C++ deep-dive, not a prerequisite</li>
+      </ul>
+    </div>
+    <div class="can">
+      <h4>What this gives you</h4>
+      <ul>
+        <li>Why passing a pointer/reference to a function lets it modify the caller's variable</li>
+        <li>Why Python's "everything is a reference" model explains list-aliasing surprises</li>
+        <li>The vocabulary (address, dereference, point at, bind) every later module assumes</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout watch">
+    <span class="ct">One confusion to kill early</span>
+    <p>A pointer and the thing it points to are <strong>two separate pieces of memory</strong>,
+    each with its own address. <code>p</code> lives somewhere; <code>*p</code> lives somewhere
+    else entirely. Beginners often picture the pointer <em>as</em> the box it points to — draw
+    it as two boxes with an arrow, always, the way section 03 above does, and this stops being
+    confusing.</p>
+  </div>
+</section>
+
+<div class="tag-links">
+  <a href="01_variables_and_memory.html">← Variables &amp; Memory</a>
+  <a href="03_big_o_notation.html">Big-O Notation →</a>
+  <a href="../01_memory_and_addresses/tutorial.html">Module 01 tutorial →</a>
+</div>
+
+<div class="stepnav">
+  <div><a href="01_variables_and_memory.html">← Variables &amp; Memory</a></div>
+  <div class="next"><a href="03_big_o_notation.html">Next: Reading Big-O Notation →</a></div>
+</div>
+
+</div>
+</body>
+</html>

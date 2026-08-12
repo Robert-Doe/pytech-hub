@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Reading C, C++ & Python Side by Side — Prerequisites</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/course.css">
+<style>:root{ --pen:#6B3FA0; }</style>
+</head>
+<body>
+<div class="sheet">
+
+  <p class="crumbs"><a href="../prerequisites.html">← Prerequisites</a></p>
+
+  <header class="masthead" style="padding-top:36px">
+    <p class="eyebrow">Prerequisite 04 of 04</p>
+    <h1>C, C++ &amp; Python — a Rosetta Stone</h1>
+    <p class="thesis">Every module ships the same structure three times. This page exists so
+    no module has to stop and explain <code>malloc</code> vs <code>new</code> vs a Python
+    list — you'll already know the shape.</p>
+  </header>
+
+<section class="mod" id="m01">
+  <div class="modhead"><span class="modnum">01</span><h2>The Big Analogy</h2></div>
+
+  <div class="analogy">
+    <p><strong>Three translations of the same instruction manual.</strong> Imagine a piece of
+    furniture that ships with an instruction manual printed in three languages. The
+    <em>furniture</em> — the actual data structure — is identical in all three: same shape,
+    same screws, same final result. What differs is how explicit each manual has to be. The
+    German manual (C) tells you the exact torque for every screw and makes you supply your own
+    screwdriver. The English manual (C++) gives you sensible defaults but lets you override
+    any of them. The picture-only manual (Python) just shows you the finished picture and
+    trusts a machine to work out the screws for you. Read one confidently, and the "translation"
+    to either of the others is mostly just vocabulary.</p>
+  </div>
+</section>
+
+<section class="mod" id="m02">
+  <div class="modhead"><span class="modnum">02</span><h2>What Happens, Step by Step</h2></div>
+
+  <div class="spec">
+    <ol>
+      <li><strong>C is compiled, ahead of time, to machine code</strong> — <code>gcc file.c -o file</code>
+      produces a standalone binary. There is no runtime helping you; every byte of memory you
+      use, you asked for.</li>
+      <li><strong>C++ is also compiled ahead of time</strong> — <code>g++ file.cpp -o file</code>
+      — but adds classes, references, and RAII (objects that clean up after themselves when
+      they go out of scope) on top of everything C already gives you.</li>
+      <li><strong>Python is interpreted</strong> — <code>python3 file.py</code> reads and runs
+      your source directly (technically compiling to bytecode first, invisibly). No separate
+      build step, and the runtime manages memory for you.</li>
+      <li><strong>Every module's C and C++ files declare a "shape" in a header</strong>
+      (<code>.h</code> / <code>.hpp</code>) separately from the implementation
+      (<code>.c</code> / <code>.cpp</code>) — Python has no header step; the <code>.py</code>
+      file is both at once.</li>
+    </ol>
+  </div>
+</section>
+
+<section class="mod" id="m03">
+  <div class="modhead"><span class="modnum">03</span><h2>A Concrete Map: the Same Idea, Three Ways</h2></div>
+
+  <div class="io">
+    <span class="lab">C — a growable list of ints, manually</span>
+    <pre><code><span class="c">// caller owns the memory; must call free()</span>
+int *data = malloc(capacity * sizeof(int));
+data[0] = 42;
+free(data);</code></pre>
+    <span class="lab">C++ — same idea, RAII-wrapped</span>
+    <pre><code><span class="c">// destructor frees automatically when v goes out of scope</span>
+std::vector&lt;int&gt; v;
+v.push_back(42);</code></pre>
+    <span class="lab">Python — same idea, fully managed</span>
+    <pre><code><span class="c"># garbage collector frees it whenever nothing references it</span>
+v = []
+v.append(42)</code></pre>
+  </div>
+  <p style="font-size:14.5px;color:var(--soft)">All three end up with one int, 42, reachable
+  through a name. What differs is <em>who is responsible for the memory</em> — you, the
+  compiler-generated destructor, or the garbage collector. That responsibility question is
+  the throughline of every DECISIONS.md in this course.</p>
+</section>
+
+<section class="mod" id="m04">
+  <div class="modhead"><span class="modnum">04</span><h2>Syntax Equivalences You'll See Constantly</h2></div>
+
+  <div class="tblwrap">
+  <table>
+    <thead><tr><th>Concept</th><th>C</th><th>C++</th><th>Python</th></tr></thead>
+    <tbody>
+      <tr><td>Group related fields</td><td><code>struct Node { ... };</code></td><td><code>struct Node { ... };</code> or <code>class</code></td><td><code>class Node: ...</code></td></tr>
+      <tr><td>Request heap memory</td><td><code>malloc(n)</code></td><td><code>new T[n]</code></td><td>implicit — <code>[]</code>, <code>{}</code>, <code>Node()</code></td></tr>
+      <tr><td>Release heap memory</td><td><code>free(p)</code></td><td><code>delete[] p</code></td><td>implicit — garbage collected</td></tr>
+      <tr><td>"This function takes an X and can modify the caller's copy"</td><td><code>void f(int *x)</code></td><td><code>void f(int &amp;x)</code></td><td>always true for mutable objects; never true for immutables like int/str/tuple</td></tr>
+      <tr><td>No valid value / empty</td><td><code>NULL</code></td><td><code>nullptr</code></td><td><code>None</code></td></tr>
+      <tr><td>Compile &amp; run</td><td><code>gcc f.c -o f &amp;&amp; ./f</code></td><td><code>g++ f.cpp -o f &amp;&amp; ./f</code></td><td><code>python3 f.py</code></td></tr>
+      <tr><td>Assert a fact while testing</td><td><code>assert(x == 5);</code> <span style="color:var(--soft)">(&lt;assert.h&gt;)</span></td><td><code>assert(x == 5);</code></td><td><code>assert x == 5</code></td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section class="mod" id="m05">
+  <div class="modhead"><span class="modnum">05</span><h2>Limits of This Page</h2></div>
+
+  <div class="compare">
+    <div class="cant">
+      <h4>Not covered here</h4>
+      <ul>
+        <li>C++ templates / generic programming</li>
+        <li>Python's data model internals (<code>__dunder__</code> methods) beyond what a module needs</li>
+        <li>Build systems, package managers, or IDE setup — every module documents its exact compile command instead</li>
+      </ul>
+    </div>
+    <div class="can">
+      <h4>What this page gives you</h4>
+      <ul>
+        <li>Enough shared vocabulary that a module's three source files read as "the same thing, three accents" instead of three unrelated languages</li>
+        <li>Why the C version of a module is usually the longest and the Python version the shortest — same logic, different amounts the language does for you</li>
+        <li>The exact compile/run commands every module's "Run It" section will reuse verbatim</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout watch">
+    <span class="ct">One confusion to kill early</span>
+    <p>C++'s <code>std::vector</code>, Python's <code>list</code>, and similar built-ins are
+    <strong>not</strong> what you'll be building in Module 03 — this course builds a dynamic
+    array from raw <code>malloc</code>/pointers first, precisely so those built-ins stop being
+    magic. Once you've built one, using the standard library's version is just "using the
+    production-grade version of the thing I now understand."</p>
+  </div>
+</section>
+
+<div class="tag-links">
+  <a href="03_big_o_notation.html">← Reading Big-O Notation</a>
+  <a href="../01_memory_and_addresses/tutorial.html">Module 01 tutorial →</a>
+</div>
+
+<div class="stepnav">
+  <div><a href="03_big_o_notation.html">← Reading Big-O Notation</a></div>
+  <div class="next"><a href="../01_memory_and_addresses/tutorial.html">Next: Module 01 — Memory &amp; Addresses →</a></div>
+</div>
+
+</div>
+</body>
+</html>

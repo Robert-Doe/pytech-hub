@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Reading Big-O Notation — Prerequisites</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/course.css">
+<style>:root{ --pen:#6B3FA0; }</style>
+</head>
+<body>
+<div class="sheet">
+
+  <p class="crumbs"><a href="../prerequisites.html">← Prerequisites</a></p>
+
+  <header class="masthead" style="padding-top:36px">
+    <p class="eyebrow">Prerequisite 03 of 04</p>
+    <h1>Reading Big-O Notation</h1>
+    <p class="thesis">Not how to <em>derive</em> Big-O (that's earned properly in Module 04)
+    — just how to <em>read</em> it fluently, since every module from here on states one.</p>
+  </header>
+
+<section class="mod" id="m01">
+  <div class="modhead"><span class="modnum">01</span><h2>The Big Analogy</h2></div>
+
+  <div class="analogy">
+    <p><strong>Looking for a name in a phone book vs. a shuffled pile of index cards.</strong>
+    Say you need to find "Wilson" in a phone book of 1,000,000 names. If it's alphabetized,
+    you open to the middle, see you're past "W," flip back to the middle of what's left, and
+    so on — about 20 flips, tops. Double the phone book to 2,000,000 names and you need only
+    <em>one more flip</em>. That's how forgiving a good structure can be.</p>
+    <p>Now say the same 1,000,000 names are on index cards in a random pile. You have to check
+    cards one at a time until you get lucky. Double the pile, and on average you double your
+    work. <strong>Big-O notation is just a compact way of saying "which of these two situations
+    are we in, and how bad does doubling the input make it?"</strong> — without caring about
+    the exact number of flips, only the <em>shape</em> of how the work grows.</p>
+  </div>
+</section>
+
+<section class="mod" id="m02">
+  <div class="modhead"><span class="modnum">02</span><h2>What Happens, Step by Step</h2></div>
+
+  <div class="spec">
+    <ol>
+      <li><strong>Count the operations that matter</strong> as a function of input size
+      <var>n</var> — comparisons, swaps, array accesses; whichever operation dominates the
+      work for the structure/algorithm in question.</li>
+      <li><strong>Throw away constants and low-order terms.</strong> "5n + 12 operations"
+      and "n operations" are both written <code>O(n)</code>, because what Big-O communicates
+      is <em>growth shape</em>, not an exact count — the constants get swamped as <var>n</var>
+      gets large, and different machines/languages have different constants anyway.</li>
+      <li><strong>Name the shape</strong> using the table in section 04 below —
+      <code>O(1)</code>, <code>O(log n)</code>, <code>O(n)</code>, <code>O(n log n)</code>,
+      <code>O(n²)</code> are the five you'll see constantly in this course.</li>
+      <li><strong>State which case you mean.</strong> "Big-O" technically means worst case,
+      but this course (and most working programmers) also talks about <em>average</em> case
+      and <em>best</em> case for the same structure — a hash table is <code>O(1)</code>
+      average but <code>O(n)</code> worst case, and both facts matter. Modules will always say
+      which one they mean.</li>
+    </ol>
+  </div>
+</section>
+
+<section class="mod" id="m03">
+  <div class="modhead"><span class="modnum">03</span><h2>A Concrete Map: Growth Rates at n=1,000,000</h2></div>
+
+  <div class="tblwrap">
+  <table>
+    <thead><tr><th>Notation</th><th>Name</th><th>Operations at n=1,000,000</th><th>Course example</th></tr></thead>
+    <tbody>
+      <tr><td><code>O(1)</code></td><td>Constant</td><td>1</td><td>Array index lookup (Module 02)</td></tr>
+      <tr><td><code>O(log n)</code></td><td>Logarithmic</td><td>~20</td><td>Binary search (Module 37)</td></tr>
+      <tr><td><code>O(n)</code></td><td>Linear</td><td>1,000,000</td><td>Linear search, printing a linked list</td></tr>
+      <tr><td><code>O(n log n)</code></td><td>Linearithmic</td><td>~20,000,000</td><td>Merge sort, heap sort (Modules 33, 35)</td></tr>
+      <tr><td><code>O(n²)</code></td><td>Quadratic</td><td>1,000,000,000,000</td><td>Bubble sort (Module 32)</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p style="font-size:14.5px;color:var(--soft)">The jump from <code>O(n log n)</code> to
+  <code>O(n²)</code> at real scale is why Module 31 proves a lower bound <em>before</em> any
+  sort is written — so you know 20,000,000 vs. 1,000,000,000,000 isn't a rounding error, it's
+  the entire reason merge sort exists.</p>
+</section>
+
+<section class="mod" id="m04">
+  <div class="modhead"><span class="modnum">04</span><h2>Time vs. Space — the Other Axis</h2></div>
+
+  <div class="spec">
+    <p>Everything above described <strong>time complexity</strong> — how the number of
+    operations grows. The exact same notation also describes <strong>space complexity</strong>
+    — how much <em>extra</em> memory an algorithm needs beyond its input. Merge sort
+    (Module 33) is <code>O(n log n)</code> time but <code>O(n)</code> <em>space</em>, because
+    it needs a second array to merge into. Heap sort (Module 35) is also
+    <code>O(n log n)</code> time, but <code>O(1)</code> space, because it sorts in place.
+    Whenever this course states a complexity with no axis named, assume time — space is always
+    called out explicitly.</p>
+  </div>
+</section>
+
+<section class="mod" id="m05">
+  <div class="modhead"><span class="modnum">05</span><h2>Limits of This Page</h2></div>
+
+  <div class="compare">
+    <div class="cant">
+      <h4>Not covered here</h4>
+      <ul>
+        <li>How to formally <em>derive</em> a Big-O bound from code (Module 04's whole job)</li>
+        <li>Amortized analysis (earned in Module 03, once the dynamic array exists to demonstrate it on)</li>
+        <li>Master Theorem / recurrence solving for divide-and-conquer algorithms (a Phase 6 cluster deep-dive)</li>
+      </ul>
+    </div>
+    <div class="can">
+      <h4>What this page gives you</h4>
+      <ul>
+        <li>Fluent reading of any <code>O(...)</code> claim this course makes from here on</li>
+        <li>A gut sense for which growth rates are "fine" vs. "will not finish" at real scale</li>
+        <li>The time/space distinction so a module can say "O(n) space" without re-explaining it</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout watch">
+    <span class="ct">One confusion to kill early</span>
+    <p><code>O(n²)</code> is not automatically "bad" and <code>O(n)</code> is not
+    automatically "good." For small <var>n</var>, a simple <code>O(n²)</code> algorithm with
+    tiny constants can beat a fancy <code>O(n log n)</code> one with large constants — which is
+    exactly why real sorting libraries fall back to insertion sort (Module 32) for small
+    sub-arrays inside an otherwise <code>O(n log n)</code> sort. Big-O describes what happens
+    as <var>n</var> grows large, not what's fastest at every size.</p>
+  </div>
+</section>
+
+<div class="tag-links">
+  <a href="02_pointers_and_references.html">← Pointers &amp; References</a>
+  <a href="04_reading_the_three_languages.html">C, C++ &amp; Python Side by Side →</a>
+  <a href="../04_measuring_big_o/tutorial.html">Module 04 tutorial →</a>
+</div>
+
+<div class="stepnav">
+  <div><a href="02_pointers_and_references.html">← Pointers &amp; References</a></div>
+  <div class="next"><a href="04_reading_the_three_languages.html">Next: C, C++ &amp; Python, Side by Side →</a></div>
+</div>
+
+</div>
+</body>
+</html>

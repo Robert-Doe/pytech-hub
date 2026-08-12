@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Variables & Memory — Prerequisites</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/course.css">
+<style>:root{ --pen:#6B3FA0; }</style>
+</head>
+<body>
+<div class="sheet">
+
+  <p class="crumbs"><a href="../prerequisites.html">← Prerequisites</a></p>
+
+  <header class="masthead" style="padding-top:36px">
+    <p class="eyebrow">Prerequisite 01 of 04</p>
+    <h1>Variables &amp; Memory</h1>
+    <p class="thesis">What a variable actually is once the compiler or interpreter is done
+    with it — and the two very different places a value can live.</p>
+  </header>
+
+<section class="mod" id="m01">
+  <div class="modhead"><span class="modnum">01</span><h2>The Big Analogy</h2></div>
+
+  <div class="analogy">
+    <p><strong>A row of numbered post office boxes.</strong> Picture your computer's memory
+    as one enormous wall of numbered post office boxes — box #1, box #2, box #3, all the way
+    up into the billions. Every box is exactly one byte wide. A <strong>variable</strong> is
+    not the value inside a box — it's a <em>label you stuck on the outside of a box (or a run
+    of boxes)</em>, so you don't have to remember "the thing I care about is in box
+    #4,481,204." When your code says <code>x = 5</code>, you're not creating the number 5 out
+    of nowhere — you're writing 5 into some box(es) and taping a label reading "x" onto them.</p>
+    <p>Two different clerks manage this wall of boxes, and they work very differently: one is
+    fast, disciplined, and only rents boxes in a strict line; the other is slower, more
+    flexible, and will rent you a box of any size for as long as you ask. Those two clerks are
+    the <strong>stack</strong> and the <strong>heap</strong>.</p>
+  </div>
+</section>
+
+<section class="mod" id="m02">
+  <div class="modhead"><span class="modnum">02</span><h2>What Happens, Step by Step</h2></div>
+
+  <div class="spec">
+    <ol>
+      <li><strong>You declare a variable</strong> (e.g. <code>int x;</code> in C, <code>x = 5</code>
+      in Python). The runtime reserves enough boxes to hold that kind of value.</li>
+      <li><strong>The reservation happens in one of two places.</strong> Local variables with a
+      size known at compile time (like a single <code>int</code>) go on the <strong>stack</strong>
+      — a strictly ordered region that grows and shrinks automatically as functions are entered
+      and exited. Anything whose size isn't known until runtime, or that needs to outlive the
+      function that created it, goes on the <strong>heap</strong> — a large, unordered region
+      you must explicitly ask for space in (and, in C/C++, explicitly give back).</li>
+      <li><strong>The variable name is resolved at compile/parse time</strong> to "box(es)
+      starting at this address." From then on, using the variable is really the compiler
+      silently inserting "read/write starting at that address" for you.</li>
+      <li><strong>When the variable goes out of scope</strong>, stack space is reclaimed
+      automatically (the clerk just marks those boxes "next in line" again — nothing is
+      erased, just no longer labeled). Heap space is <em>not</em> automatically reclaimed in
+      C/C++ — you must call <code>free()</code> / <code>delete</code>, or it stays rented
+      forever (a memory leak). Python's heap is managed for you by a garbage collector — a
+      different mechanism, but the stack/heap split here still describes where the object
+      itself lives.</li>
+    </ol>
+  </div>
+</section>
+
+<section class="mod" id="m03">
+  <div class="modhead"><span class="modnum">03</span><h2>A Concrete Map of State</h2></div>
+
+  <div class="rail">
+    <div class="railbox">
+      <h4>Stack ↓ (one running function)</h4>
+      <ol class="stk">
+        <li><span>int x = 5;</span><span class="note">@0x7ffee01</span></li>
+        <li class="tgt"><span>int *p = &amp;x;</span><span class="note">@0x7ffee09</span></li>
+        <li><span>char name[4]</span><span class="note">4 boxes</span></li>
+      </ol>
+      <p style="margin-top:14px;font-size:13px;color:var(--soft)">Freed automatically when
+      the function returns. Fixed size, known at compile time.</p>
+    </div>
+    <div class="railbox">
+      <h4>Heap (scattered, on request)</h4>
+      <ol class="stk">
+        <li><span>10 ints</span><span class="note">@0x55f10</span></li>
+        <li><span>40 bytes</span><span class="note">@0x55fa0</span></li>
+      </ol>
+      <p style="margin-top:14px;font-size:13px;color:var(--soft)">Size decided at runtime
+      (<code>malloc</code>/<code>new</code>/<code>list()</code>). Lives until explicitly
+      freed (or garbage-collected in Python).</p>
+    </div>
+  </div>
+  <p style="font-size:14.5px;color:var(--soft)">The highlighted row: <code>p</code> doesn't
+  hold <code>5</code> — it holds the address <code>0x7ffee01</code>, i.e. "go look at
+  <code>x</code>." That indirection is the whole subject of the next page.</p>
+</section>
+
+<section class="mod" id="m04">
+  <div class="modhead"><span class="modnum">04</span><h2>Per-Language Reality Check</h2></div>
+
+  <div class="tblwrap">
+  <table>
+    <thead><tr><th>Question</th><th>C</th><th>C++</th><th>Python</th></tr></thead>
+    <tbody>
+      <tr><td>Where do local primitives live?</td><td>Stack</td><td>Stack (unless <code>new</code>'d)</td><td>Every value is a heap object; the "stack" only holds a reference to it</td></tr>
+      <tr><td>Who frees heap memory?</td><td>You, via <code>free()</code></td><td>You (<code>delete</code>) or RAII wrappers</td><td>The garbage collector, automatically</td></tr>
+      <tr><td>Can you see a raw address?</td><td class="yes">Yes — <code>&amp;x</code></td><td class="yes">Yes — <code>&amp;x</code></td><td>Only indirectly, via <code>id(x)</code> (a CPython detail, not a language guarantee)</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>This table matters because Module 01's actual code shows you all three side by side —
+  this is the map you'll be checking it against.</p>
+</section>
+
+<section class="mod" id="m05">
+  <div class="modhead"><span class="modnum">05</span><h2>Limits of This Page</h2></div>
+
+  <div class="compare">
+    <div class="cant">
+      <h4>Not covered here</h4>
+      <ul>
+        <li>Garbage collection algorithms</li>
+        <li>Virtual memory / paging</li>
+        <li>CPU cache lines and locality (earned in Module 02, once a real array exists to demonstrate it on)</li>
+      </ul>
+    </div>
+    <div class="can">
+      <h4>What this page gives you</h4>
+      <ul>
+        <li>The vocabulary "stack" vs "heap" used correctly for the rest of the course</li>
+        <li>Why C/C++ require manual cleanup and Python doesn't</li>
+        <li>Enough of a mental model to read Module 01's address-printing code without surprise</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout watch">
+    <span class="ct">One confusion to kill early</span>
+    <p>"The stack" here (a region of memory every running function uses) is a completely
+    different thing from "a Stack" the data structure you'll build in Module 07. They share a
+    name because they share a LIFO (last-in-first-out) shape — the call stack really is a
+    stack data structure, just one the CPU/runtime manages for you instead of one you build
+    yourself. This course keeps them apart in the glossary as <strong>Stack (memory)</strong>
+    vs <strong>Stack (ADT)</strong>.</p>
+  </div>
+</section>
+
+<div class="tag-links">
+  <a href="02_pointers_and_references.html">Pointers &amp; References →</a>
+  <a href="../01_memory_and_addresses/tutorial.html">Module 01 tutorial →</a>
+</div>
+
+<div class="stepnav">
+  <div><a href="../prerequisites.html">← Prerequisites index</a></div>
+  <div class="next"><a href="02_pointers_and_references.html">Next: Pointers &amp; References →</a></div>
+</div>
+
+</div>
+</body>
+</html>
