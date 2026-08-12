@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Module 01 — Memory & Addresses</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/course.css">
+<style>:root{ --pen:#1D6FA5; }</style>
+</head>
+<body>
+<div class="sheet">
+
+  <p class="crumbs"><a href="../ROADMAP.md">Roadmap</a> · Track 1 · Phase 1: Bare-Metal Foundations</p>
+
+  <header class="masthead" style="padding-top:36px">
+    <p class="eyebrow">Module 01 of 38 · Track 1: Core Engine</p>
+    <h1>Memory &amp; <span class="accent" style="color:var(--pen)">Addresses</span></h1>
+    <p class="thesis">Every data structure this course builds is, underneath, just a naming
+    scheme over raw addressable memory. This module proves that claim with real, running code
+    instead of asserting it.</p>
+
+    <div class="therule">
+      <span class="lbl">What this module proves, in one line</span>
+      <p>A variable name is a <span class="hi">label on a memory address</span> — and once you
+      can hold that address itself (a pointer/reference), you can hand a function the power to
+      modify the caller's variable, or walk a run of values one address at a time.</p>
+    </div>
+  </header>
+
+<section class="mod" id="m00">
+  <div class="modhead"><span class="modnum">00</span><h2>Prerequisites</h2></div>
+  <p>This module assumes you've read:</p>
+  <div class="tag-links">
+    <a href="../prerequisites/01_variables_and_memory.html">variables-and-memory</a>
+    <a href="../prerequisites/02_pointers_and_references.html">pointers-and-references</a>
+    <a href="../prerequisites/04_reading_the_three_languages.html">reading-c-cpp-python</a>
+  </div>
+</section>
+
+<section class="mod" id="m01">
+  <div class="modhead"><span class="modnum">01</span><h2>The Big Analogy</h2></div>
+  <div class="analogy">
+    <p><strong>A hotel with numbered rooms, and a hotel with numbered rooms whose front desk
+    also sells you a card telling you which room someone else is in.</strong> An ordinary
+    variable is a guest in a room — box #4,481,204, say. You (the program) know the guest's
+    name ("x") and the room number is handled for you.</p>
+    <p>A pointer is a different kind of purchase entirely: a small index card that says
+    "the guest you want is in room #4,481,204." The card itself lives in some <em>other</em>
+    room — it has to, it's a physical object too. Handing someone that card doesn't hand them
+    the guest. It hands them <em>directions</em>. But directions are exactly what a function
+    needs if you want it to knock on that door and change something about the guest inside —
+    which is a power a plain copy of the guest's name would never give it.</p>
+  </div>
+</section>
+
+<section class="mod" id="m02">
+  <div class="modhead"><span class="modnum">02</span><h2>What Happens, Step by Step</h2></div>
+  <div class="spec">
+    <ol>
+      <li>A variable is declared. The compiler (C/C++) or runtime (Python) reserves space and
+      silently remembers "this name means: start reading/writing at this address."</li>
+      <li>Taking that variable's address (<code>&amp;x</code> in C/C++; implicit in Python)
+      produces a <em>new, separate</em> value — the address itself — small enough to fit in
+      one machine word, regardless of how large the thing it points to is.</li>
+      <li>That address can be stored in its own variable (a pointer, or a C++ reference, or
+      just any Python name) and passed to a function.</li>
+      <li>Inside that function, dereferencing the address (<code>*p</code> in C/C++; implicit
+      in Python) reads or writes the <em>original</em> variable — not a copy — because the
+      address was never a copy to begin with.</li>
+      <li>For an array, this generalizes: each element's address is the previous element's
+      address plus one element's size, exactly, with no gaps — which is what
+      <code>array_stride_bytes</code> in this module's code measures and proves.</li>
+    </ol>
+  </div>
+</section>
+
+<section class="mod" id="m03">
+  <div class="modhead"><span class="modnum">03</span><h2>A Concrete Map of State</h2></div>
+  <p>This is the real, verified output of <code>cpp/demo.cpp</code> (captured below, unedited)
+  turned into a picture. Three separate boxes, three separate addresses:</p>
+  <div class="rail" style="grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)">
+    <div class="railbox">
+      <h4>&amp;p — where p itself lives</h4>
+      <p style="font-family:var(--mono);font-size:14px;margin:0">0x7ffdd3d426b0</p>
+    </div>
+    <div class="railbox tgt-wrap" style="border-color:var(--pen)">
+      <h4 style="color:var(--pen)">p — p's value</h4>
+      <p style="font-family:var(--mono);font-size:14px;margin:0;color:var(--pen);font-weight:600">0x7ffdd3d426a8</p>
+    </div>
+    <div class="railbox" style="border-color:var(--good);background:var(--good-bg)">
+      <h4 style="color:var(--good)">&amp;x — where x lives</h4>
+      <p style="font-family:var(--mono);font-size:14px;margin:0;color:var(--good);font-weight:600">0x7ffdd3d426a8</p>
+    </div>
+  </div>
+  <p style="font-size:14.5px;color:var(--soft);margin-top:14px">Notice: <code>p</code>'s
+  value and <code>&amp;x</code> are the <em>same number</em> — that equality is not a
+  coincidence, it's the entire definition of "<code>p</code> points to <code>x</code>," and
+  it's why <code>*p</code> and <code>x</code> read as the same value throughout the demo.</p>
+</section>
+
+<section class="mod" id="m04">
+  <div class="modhead"><span class="modnum">04</span><h2>The Code, Explained</h2></div>
+
+  <h3>Proving the stride (all three languages agree)</h3>
+  <div class="io">
+    <span class="lab">c/memory_and_addresses.c</span>
+    <pre><code>ptrdiff_t array_stride_bytes(const int *arr) {
+    <span class="c">/* Cast to char* first: pointer subtraction on int* reports</span>
+    <span class="c">   "how many ints apart," not "how many bytes apart." */</span>
+    return (const char *)&amp;arr[1] - (const char *)&amp;arr[0];
+}</code></pre>
+  </div>
+  <p>The cast to <code>char *</code> is not stylistic — see
+  <a href="DECISIONS.md">DECISIONS.md §2</a> for why the C standard forces it. In C++, the
+  same function uses <code>reinterpret_cast&lt;const char *&gt;</code> instead of a C-style
+  cast — same operation, spelled the way C++ prefers when changing a pointer's <em>type</em>
+  without changing what it points at.</p>
+
+  <h3>Swap by address vs. swap by mutation (three languages, one idea)</h3>
+  <div class="io">
+    <span class="lab">c/memory_and_addresses.c — swap via pointer</span>
+    <pre><code>void swap_ints(int *a, int *b) {
+    int temp = *a;   <span class="c">// read through the address</span>
+    *a = *b;         <span class="c">// write through the address</span>
+    *b = temp;
+}</code></pre>
+    <span class="lab">cpp/memory_and_addresses.cpp — swap via reference</span>
+    <pre><code>void swap_ints_ref(int &amp;a, int &amp;b) {
+    int temp = a;    <span class="c">// no * needed -- the compiler dereferences for you</span>
+    a = b;
+    b = temp;
+}</code></pre>
+    <span class="lab">python/memory_and_addresses.py — swap via shared-object mutation</span>
+    <pre><code>def swap_via_temp(lst, i, j):
+    <span class="c"># lst is a reference the caller already holds too --</span>
+    <span class="c"># mutating it here is visible to the caller, with no & needed</span>
+    lst[i], lst[j] = lst[j], lst[i]</code></pre>
+  </div>
+  <p>All three achieve the identical outcome — the caller sees the swap — through the same
+  underlying mechanism (mutate through a shared address), spelled three different ways. Why
+  Python's version takes a list and two indices instead of two bare values is explained in
+  <a href="DECISIONS.md">DECISIONS.md §7</a> — it's not a style choice, it's the only version
+  that actually works.</p>
+</section>
+
+<section class="mod" id="m05">
+  <div class="modhead"><span class="modnum">05</span><h2>Limits / What You Cannot Do Yet</h2></div>
+  <div class="compare">
+    <div class="cant">
+      <h4>Can't do yet</h4>
+      <ul>
+        <li>Build a structure that grows — every variable here has a fixed, compile-time size</li>
+        <li>Chain values together via their addresses (that's Module 05, the linked list)</li>
+        <li>Reason about <em>cost</em> — this module never asked "how expensive," only "how does it work" (Module 04 fixes that)</li>
+        <li>Explain why heap allocation exists at all — everything here lived on the stack</li>
+      </ul>
+    </div>
+    <div class="can">
+      <h4>Can do now</h4>
+      <ul>
+        <li>Read any later module's pointer/reference code without the mechanism itself being a mystery</li>
+        <li>Explain, correctly, why passing a value to a function in C doesn't let that function modify the caller's copy — and why passing its address does</li>
+        <li>Predict that array indexing is arithmetic (<code>base_address + i * element_size</code>), not magic — the exact fact Module 02 builds on</li>
+        <li>Correctly predict Python aliasing surprises instead of being confused by them</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="mod" id="m06">
+  <div class="modhead"><span class="modnum">06</span><h2>Run It</h2></div>
+
+  <h3>C</h3>
+  <div class="io">
+    <span class="lab">Build &amp; run the demo</span>
+    <pre><code>cd 01_memory_and_addresses/c
+gcc -std=c11 -Wall -Wextra -o demo demo.c memory_and_addresses.c
+./demo</code></pre>
+    <span class="lab">Actual output (captured verbatim)</span>
+    <pre><code>x = 5, stored at address 0x7ffcaaba6bb0
+y = 99, stored at address 0x7ffcaaba6bb4
+
+p  = 0x7ffcaaba6bb0   (p HOLDS x's address)
+&amp;p = 0x7ffcaaba6bb8   (p ITSELF also lives somewhere, a third address)
+*p = 5          (dereferencing p reads x's value)
+
+Before swap: x=5 y=99
+After  swap: x=99 y=5
+
+arr[0] address: 0x7ffcaaba6bc0
+arr[1] address: 0x7ffcaaba6bc4
+stride = 4 bytes   (sizeof(int) = 4)</code></pre>
+    <span class="lab">Build &amp; run the tests</span>
+    <pre><code>gcc -std=c11 -Wall -Wextra -o test_runner test_memory_and_addresses.c memory_and_addresses.c
+./test_runner
+<span class="g">All C tests passed.</span></code></pre>
+  </div>
+
+  <h3>C++</h3>
+  <div class="io">
+    <span class="lab">Build &amp; run the demo</span>
+    <pre><code>cd 01_memory_and_addresses/cpp
+g++ -std=c++17 -Wall -Wextra -o demo demo.cpp memory_and_addresses.cpp
+./demo</code></pre>
+    <span class="lab">Actual output (captured verbatim)</span>
+    <pre><code>x = 5, stored at address 0x7ffdd3d426a8
+y = 99, stored at address 0x7ffdd3d426ac
+
+p  = 0x7ffdd3d426a8   (p HOLDS x's address)
+&amp;p = 0x7ffdd3d426b0   (p ITSELF also lives somewhere)
+*p = 5          (dereferencing p reads x's value)
+
+r is bound to x. &amp;r == &amp;x? yes
+
+Before swap (pointer):   x=5 y=99
+After  swap (pointer):   x=99 y=5
+
+Before swap (reference): x=99 y=5
+After  swap (reference): x=5 y=99
+
+arr[0] address: 0x7ffdd3d426c0
+arr[1] address: 0x7ffdd3d426c4
+stride = 4 bytes   (sizeof(int) = 4)</code></pre>
+    <span class="lab">Build &amp; run the tests</span>
+    <pre><code>g++ -std=c++17 -Wall -Wextra -o test_runner test_memory_and_addresses.cpp memory_and_addresses.cpp
+./test_runner
+<span class="g">All C++ tests passed.</span></code></pre>
+  </div>
+
+  <h3>Python</h3>
+  <div class="io">
+    <span class="lab">Run the demo</span>
+    <pre><code>cd 01_memory_and_addresses/python
+python3 memory_and_addresses.py</code></pre>
+    <span class="lab">Actual output (captured verbatim)</span>
+    <pre><code>x = 5, id(x) = 0x7ffbb69d1a38
+y = 99, id(y) = 0x7ffbb69d25f8
+
+a = [10, 20, 30], id(a) = 0x22e7a54d180
+b = [10, 20, 30], id(b) = 0x22e7a54d180   &lt;- identical id to a
+after b[0] = 999, a = [999, 20, 30]   &lt;- changed too: same object
+
+Before swap: [1, 2, 3]
+After  swap: [3, 2, 1]
+
+c = [1, 2, 3]   &lt;- unaffected by d's reassignment
+d = [9, 9, 9]</code></pre>
+    <span class="lab">Run the tests</span>
+    <pre><code>python3 test_memory_and_addresses.py
+<span class="g">All Python tests passed.</span></code></pre>
+  </div>
+
+  <div class="callout watch">
+    <span class="ct">Getting a blank or broken result?</span>
+    <p><strong>Address values will not match the ones printed above</strong> — that's
+    expected, not a bug. Addresses are assigned fresh by the OS on every run and depend on
+    your machine, your OS, and even ASLR (address space layout randomization). What must
+    match: <code>p</code>'s printed value and <code>&amp;x</code>'s printed value should be
+    <em>identical to each other</em> (just not to the numbers above), the stride should always
+    be <code>4</code> on a system where <code>sizeof(int) == 4</code>, and both test runners
+    must print their "All ... tests passed." line with no assertion failures. If
+    <code>gcc</code>/<code>g++</code> isn't found, this course assumes a standard C11/C++17
+    toolchain is on your <code>PATH</code> — install one (e.g. via your OS package manager, or
+    WSL/MinGW on Windows) before continuing.</p>
+  </div>
+</section>
+
+<section class="mod" id="m07">
+  <div class="modhead"><span class="modnum">07</span><h2>Brain Exercise</h2></div>
+  <p>Before revealing the answer, work through this on paper:</p>
+  <details>
+    <summary>In C, <code>swap_ints(&amp;x, &amp;x)</code> — passing the SAME variable's
+    address as both arguments — what happens, and why is it safe?</summary>
+    <div class="reveal">
+      <p>Trace it: <code>temp = *a</code> reads <code>x</code>'s current value into
+      <code>temp</code>. <code>*a = *b</code> writes <code>x</code>'s value into... itself
+      (since <code>a</code> and <code>b</code> are the same address) — no change. <code>*b =
+      temp</code> writes the saved original value back into <code>x</code> — also no change.
+      Net effect: <code>x</code> ends exactly where it started. It's safe specifically because
+      every step reads before it overwrites — nothing is lost before it's saved. This is
+      actually asserted directly in <code>test_memory_and_addresses.c</code>: <code>swap_ints(&amp;c,
+      &amp;c); assert(c == 42);</code>. Contrast this with an in-place algorithm that
+      <em>doesn't</em> save a temp first — that's a real bug class you'll meet again once
+      Module 34 (Quick Sort) starts swapping array elements by index.</p>
+    </div>
+  </details>
+</section>
+
+<section class="mod" id="m08">
+  <div class="modhead"><span class="modnum">08</span><h2>There Are No Dumb Questions</h2></div>
+
+  <div class="qa">
+    <p class="q">Why does Python print an <code>id()</code> that looks exactly like a C
+    address, if the language spec says it's not guaranteed to be one?</p>
+    <p class="a">Because you're running CPython, and CPython's particular implementation of
+    <code>id()</code> really is "return the object's memory address" — that's an
+    implementation choice CPython made, not a promise the Python language makes. See
+    <a href="DECISIONS.md">DECISIONS.md §6</a>. Another Python implementation (PyPy, for
+    instance) is free to return something else entirely and still be 100% correct Python.</p>
+  </div>
+
+  <div class="qa">
+    <p class="q">If a C++ reference is "just a safer pointer," why does this course use raw
+    pointers at all after this module?</p>
+    <p class="a">It doesn't, mostly — but this module deliberately shows both so you can watch
+    them do the identical thing side by side (<a href="DECISIONS.md">DECISIONS.md §4</a>).
+    From Module 05 onward, the C++ implementations still use raw pointers for one specific
+    reason: a linked structure's node has to be able to point at <em>nothing</em> (the end of
+    a list), and a C++ reference — unlike a pointer — can never be null. That's not this
+    module's problem yet, but it's why the choice isn't "always prefer references."</p>
+  </div>
+
+  <div class="qa">
+    <p class="q">Why did <code>array_stride_bytes</code> return exactly <code>4</code>, and
+    will it always?</p>
+    <p class="a">4 because this module's demo used <code>int</code>, and on the machine this
+    was run on (and the overwhelming majority of modern desktop/server systems),
+    <code>sizeof(int) == 4</code>. It is not a language guarantee — the C standard only
+    requires <code>int</code> be <em>at least</em> 16 bits, and some embedded platforms differ.
+    The test file doesn't hardcode <code>4</code> for exactly this reason — it asserts
+    <code>array_stride_bytes(arr) == sizeof(int)</code>, which is true regardless of what
+    <code>sizeof(int)</code> happens to be on the machine running it.</p>
+  </div>
+
+  <div class="qa">
+    <p class="q">The demo prints the addresses of local variables. Is it safe to save one of
+    those addresses and use it after the function returns?</p>
+    <p class="a">No — and this is worth flagging even though this module doesn't demonstrate
+    the failure. Once <code>demo()</code>/<code>main()</code> returns, the stack space for
+    <code>x</code>, <code>y</code>, and <code>arr</code> is considered free again and can be
+    overwritten by the next function call. A pointer to it becomes a <em>dangling pointer</em>
+    — this course earns that term properly once Module 05's linked list can delete a node and
+    actually demonstrate the failure, rather than just naming it.</p>
+  </div>
+
+  <div class="qa">
+    <p class="q">Why didn't the Python demo need to "free" anything, when the C and C++
+    versions didn't either (there's no <code>free()</code>/<code>delete</code> anywhere in
+    this module)?</p>
+    <p class="a">Every value in this module's C and C++ demos lived on the <strong>stack</strong>
+    (see <a href="../prerequisites/01_variables_and_memory.html">variables-and-memory</a>) —
+    plain <code>int</code>s and a fixed-size array, none of it heap-allocated, so there was
+    nothing to free. This module intentionally stays on the stack throughout; heap allocation
+    (and the cleanup it requires) is introduced in Module 03, once there's a real reason to
+    need memory whose size isn't known until runtime.</p>
+  </div>
+</section>
+
+<section class="mod" id="m09">
+  <div class="modhead"><span class="modnum">09</span><h2>What's Next</h2></div>
+  <p>Module 02 takes the single fact this module proved — that an array's elements sit at
+  <code>base_address + i × element_size</code>, with a real, measured stride to back it up —
+  and builds the first actual data structure out of it: a fixed-size array wrapper that turns
+  that arithmetic into O(1) random access you can reason about formally, not just observe in a
+  printf. Everything from here on assumes you're comfortable with the pointer/address
+  vocabulary this module established; it will not be re-taught.</p>
+</section>
+
+<div class="stepnav">
+  <div><a href="../prerequisites.html">← Prerequisites</a></div>
+  <div class="next"><a href="../02_the_array/tutorial.html">Next: Module 02 — The Array →</a></div>
+</div>
+
+</div>
+</body>
+</html>
