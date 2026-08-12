@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Module 02 — The Array</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/course.css">
+<style>:root{ --pen:#0E7C6B; }</style>
+</head>
+<body>
+<div class="sheet">
+
+  <p class="crumbs"><a href="../ROADMAP.md">Roadmap</a> · Track 1 · Phase 1: Bare-Metal Foundations</p>
+
+  <header class="masthead" style="padding-top:36px">
+    <p class="eyebrow">Module 02 of 38 · Track 1: Core Engine</p>
+    <h1>The <span style="color:var(--pen)">Array</span></h1>
+    <p class="thesis">The first real data structure this course builds — and the proof that
+    "random access is O(1)" isn't a rule to memorize, it's a direct consequence of Module 01's
+    address arithmetic.</p>
+
+    <div class="therule">
+      <span class="lbl">What this module proves, in one line</span>
+      <p>Because every element's address is <span class="hi">base + index × element size</span>,
+      reaching element 4 costs exactly the same as reaching element 4,000,000 — and because
+      that address math only works inside a fixed block of memory, this array cannot grow
+      past the size it was given.</p>
+    </div>
+  </header>
+
+<section class="mod" id="m00">
+  <div class="modhead"><span class="modnum">00</span><h2>Prerequisites</h2></div>
+  <div class="tag-links">
+    <a href="../prerequisites/01_variables_and_memory.html">variables-and-memory</a>
+    <a href="../prerequisites/03_big_o_notation.html">big-o-notation</a>
+    <a href="../01_memory_and_addresses/tutorial.html">module-01-memory-and-addresses</a>
+  </div>
+</section>
+
+<section class="mod" id="m01">
+  <div class="modhead"><span class="modnum">01</span><h2>The Big Analogy</h2></div>
+  <div class="analogy">
+    <p><strong>A parking garage with numbered, identically-sized spaces.</strong> Imagine a
+    single-level parking garage with exactly 8 spaces, numbered 0 through 7, each exactly one
+    car wide. If I tell you "the red car is in space 4," you can walk directly to space 4
+    without checking spaces 0 through 3 first — you just count four car-widths from the
+    entrance. That's random access: knowing the <em>index</em> is enough to compute the
+    <em>location</em>, with no searching involved.</p>
+    <p>But notice what that convenience costs you: the garage has exactly 8 spaces, painted
+    and poured in concrete. You cannot wish a 9th space into existence — there's a wall there.
+    If you need to park a 9th car, this garage, as built, cannot help you. That limitation
+    isn't a bug in the garage's design; it's the direct price of every space being a fixed,
+    predictable distance from the entrance. Module 03 is what happens when you ask "what if we
+    could move to a bigger garage automatically, mid-parking-trip?"</p>
+  </div>
+</section>
+
+<section class="mod" id="m02">
+  <div class="modhead"><span class="modnum">02</span><h2>What Happens, Step by Step</h2></div>
+  <div class="spec">
+    <ol>
+      <li>A <code>FixedArray</code> is created with room for exactly 8 ints, laid out
+      contiguously (Module 01's stride guarantee) — in C and C++, this space lives on the
+      stack, sized at compile time.</li>
+      <li><code>push(value)</code> writes into the next free slot (<code>data[length]</code>)
+      and increments <code>length</code> — an O(1) operation, since it never needs to look at
+      any other slot.</li>
+      <li><code>get(index)</code> first checks <code>0 &lt;= index &lt; length</code>. If it
+      fails, the call reports failure (a return code, an exception, or an exception,
+      per-language — see <a href="DECISIONS.md">DECISIONS.md #1</a>) instead of reading
+      memory that isn't actually in use.</li>
+      <li>If the check passes, <code>get</code> computes the address
+      <code>&amp;data[0] + index</code> directly — no loop, no searching — and reads the value
+      there. This is the entire mechanism behind "O(1)."</li>
+      <li><code>push</code> past the 8th slot is rejected the same way an out-of-bounds
+      <code>get</code> is: the capacity check fails, and the structure reports it cannot
+      comply, rather than silently overwriting memory it doesn't own.</li>
+    </ol>
+  </div>
+</section>
+
+<section class="mod" id="m03">
+  <div class="modhead"><span class="modnum">03</span><h2>A Concrete Map of State</h2></div>
+  <p>Real addresses from this module's own C++ demo run, after pushing 8 values — notice the
+  constant 4-byte gap, exactly matching Module 01's stride proof:</p>
+  <div class="tblwrap">
+  <table>
+    <thead><tr><th>index</th><th>value</th><th>address</th><th>gap from previous</th></tr></thead>
+    <tbody>
+      <tr><td>0</td><td>0</td><td><code>0x7ffecccffaf0</code></td><td>—</td></tr>
+      <tr><td>1</td><td>10</td><td><code>0x7ffecccffaf4</code></td><td class="yes">+4</td></tr>
+      <tr><td>2</td><td>20</td><td><code>0x7ffecccffaf8</code></td><td class="yes">+4</td></tr>
+      <tr><td>3</td><td>30</td><td><code>0x7ffecccffafc</code></td><td class="yes">+4</td></tr>
+      <tr><td>4</td><td>40</td><td><code>0x7ffecccffb00</code></td><td class="yes">+4</td></tr>
+      <tr><td>5</td><td>50</td><td><code>0x7ffecccffb04</code></td><td class="yes">+4</td></tr>
+      <tr><td>6</td><td>60</td><td><code>0x7ffecccffb08</code></td><td class="yes">+4</td></tr>
+      <tr><td>7</td><td>70</td><td><code>0x7ffecccffb0c</code></td><td class="yes">+4</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p style="font-size:14.5px;color:var(--soft)">Given only the base address
+  (<code>0x7ffecccffaf0</code>) and an index, <code>get(index)</code> never has to look this
+  table up — it computes the right row's address directly, which is exactly why the cost
+  doesn't grow with the index.</p>
+</section>
+
+<section class="mod" id="m04">
+  <div class="modhead"><span class="modnum">04</span><h2>The Code, Explained</h2></div>
+
+  <h3>The bounds check that makes O(1) access safe</h3>
+  <div class="io">
+    <span class="lab">c/fixed_array.c</span>
+    <pre><code>int array_get(const FixedArray *arr, size_t index, int *out_value) {
+    if (index &gt;= arr-&gt;length) {
+        return 0; <span class="c">/* out of bounds: caller asked for a slot not in use */</span>
+    }
+    *out_value = arr-&gt;data[index];  <span class="c">/* one address computation, one read */</span>
+    return 1;
+}</code></pre>
+  </div>
+  <p>The check costs O(1) too — it's a single comparison, not a scan — so it doesn't change
+  the overall complexity of <code>get</code>. What it buys is real: an invalid index fails
+  loudly instead of reading whatever bytes happen to sit past the array in memory.</p>
+
+  <h3>Same check, three different ways of saying "no"</h3>
+  <div class="io">
+    <span class="lab">cpp/fixed_array.cpp — throws</span>
+    <pre><code>int FixedArray::get(std::size_t index) const {
+    if (index &gt;= length_) {
+        throw std::out_of_range("FixedArray::get: index out of range");
+    }
+    return data_[index];
+}</code></pre>
+    <span class="lab">python/fixed_array.py — raises</span>
+    <pre><code>def get(self, index):
+    if not (0 &lt;= index &lt; self._length):
+        raise IndexError(f"FixedArray index {index} out of range (length={self._length})")
+    return self._data[index]</code></pre>
+  </div>
+  <p>Same logical check (<code>index</code> must be a currently-used slot), three different
+  failure-reporting mechanisms — each one matching what that language's own standard library
+  already does for the identical situation. See <a href="DECISIONS.md">DECISIONS.md #1</a> for
+  why this isn't arbitrary.</p>
+
+  <h3>Why capacity can't just be a constructor argument</h3>
+  <div class="io">
+    <span class="lab">cpp/fixed_array.hpp</span>
+    <pre><code>constexpr std::size_t kFixedArrayCapacity = 8;  <span class="c">// compile-time, not runtime</span>
+
+class FixedArray {
+    int data_[kFixedArrayCapacity];   <span class="c">// stack storage -- size must be known here</span>
+    std::size_t length_;
+    ...</code></pre>
+  </div>
+  <p>A runtime capacity would force <code>data_</code> onto the heap — which this course
+  deliberately holds off on until Module 03. See <a href="DECISIONS.md">DECISIONS.md #5</a>.</p>
+</section>
+
+<section class="mod" id="m05">
+  <div class="modhead"><span class="modnum">05</span><h2>Limits / What You Cannot Do Yet</h2></div>
+  <div class="compare">
+    <div class="cant">
+      <h4>Can't do yet</h4>
+      <ul>
+        <li>Grow past the capacity you started with — a 9th <code>push</code> always fails, by design</li>
+        <li>Insert or delete in the middle without writing that logic yourself (this module only appends)</li>
+        <li>Choose a capacity at runtime without moving the array to the heap (Module 03)</li>
+        <li>Reason formally about <em>why</em> get() is "O(1)" rather than just observing that it looks fast (Module 04)</li>
+      </ul>
+    </div>
+    <div class="can">
+      <h4>Can do now</h4>
+      <ul>
+        <li>Explain, with a real measured example, why array indexing doesn't get slower as the array grows</li>
+        <li>Predict exactly which operations on this structure are cheap (get/set/push) and why appending is the only cheap way in</li>
+        <li>Read Module 03's dynamic array knowing precisely what problem it's solving — the fixed-capacity wall this module just hit</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="mod" id="m06">
+  <div class="modhead"><span class="modnum">06</span><h2>Run It</h2></div>
+
+  <h3>C</h3>
+  <div class="io">
+    <span class="lab">Build &amp; run</span>
+    <pre><code>cd 02_the_array/c
+gcc -std=c11 -Wall -Wextra -o demo demo.c fixed_array.c
+./demo
+gcc -std=c11 -Wall -Wextra -o test_runner test_fixed_array.c fixed_array.c
+./test_runner</code></pre>
+    <span class="lab">Actual output (captured verbatim, demo)</span>
+    <pre><code>Pushing 0..7 into an 8-slot FixedArray:
+  push(0) -&gt; ok, length now 1
+  ...
+  push(70) -&gt; ok, length now 8
+
+push(999) on a full array -&gt; FAILED, as expected (this is the point of this module)
+
+Random access -- every one of these costs the same:
+  get(0) = 0
+  get(7) = 70
+  get(4) = 40
+
+get(100) on a length-8 array -&gt; FAILED, as expected (no crash)
+<span class="g">... (full address dump in the file above) ...</span></code></pre>
+    <pre><code><span class="g">All C tests passed.</span></code></pre>
+  </div>
+
+  <h3>C++</h3>
+  <div class="io">
+    <span class="lab">Build &amp; run</span>
+    <pre><code>cd 02_the_array/cpp
+g++ -std=c++17 -Wall -Wextra -o demo demo.cpp fixed_array.cpp
+./demo
+g++ -std=c++17 -Wall -Wextra -o test_runner test_fixed_array.cpp fixed_array.cpp
+./test_runner</code></pre>
+    <span class="lab">Actual output (captured verbatim, key lines)</span>
+    <pre><code>push(999) on a full array -&gt; threw std::out_of_range: "FixedArray::push: array is full"
+get(100) on a length-8 array -&gt; threw std::out_of_range: "FixedArray::get: index out of range"
+<span class="g">All C++ tests passed.</span></code></pre>
+  </div>
+
+  <h3>Python</h3>
+  <div class="io">
+    <span class="lab">Run</span>
+    <pre><code>cd 02_the_array/python
+python3 fixed_array.py
+python3 test_fixed_array.py</code></pre>
+    <span class="lab">Actual output (captured verbatim, key lines)</span>
+    <pre><code>push(999) on a full array -&gt; raised FixedArrayFullError: "FixedArray is full (capacity=8)"
+get(100) on a length-8 array -&gt; raised IndexError: "FixedArray index 100 out of range (length=8)"
+<span class="g">All Python tests passed.</span></code></pre>
+  </div>
+
+  <div class="callout watch">
+    <span class="ct">Getting a blank or broken result?</span>
+    <p>Addresses printed by your run will differ from the ones in this tutorial — expected,
+    per Module 01. What must be true regardless of machine: every gap between consecutive
+    addresses is <code>4</code> (assuming <code>sizeof(int) == 4</code> on your system), the
+    9th <code>push</code> always fails, <code>get(100)</code> always fails, and every test
+    runner prints its "All ... tests passed." line with zero assertion failures. If a build
+    fails with "undefined reference to `main'" or similar, double check you compiled the demo
+    or test file <em>together with</em> <code>fixed_array.c</code>/<code>.cpp</code> — neither
+    file alone contains a working program.</p>
+  </div>
+</section>
+
+<section class="mod" id="m07">
+  <div class="modhead"><span class="modnum">07</span><h2>Brain Exercise</h2></div>
+  <p>Work through this before revealing the answer:</p>
+  <details>
+    <summary>This module's <code>get()</code> and a hypothetical "search for the first value
+    equal to 40" function would both eventually return the value 40. Are they the same
+    complexity? Why or why not?</summary>
+    <div class="reveal">
+      <p>No — and the difference is the entire point of this module. <code>get(4)</code> is
+      told <em>exactly</em> which slot to read, so it goes straight there: one comparison
+      (bounds check), one address computation, one read — <strong>O(1)</strong>, regardless of
+      which index is requested or how many elements are in use. A "find the value 40" function
+      is told a <em>value</em>, not a location, so in the worst case (the value is last, or
+      absent) it must inspect every slot in order — <strong>O(n)</strong>. Both return "40,"
+      but one was handed the address as an index and the other had to discover it. This exact
+      distinction — knowing where vs. having to look — is what separates every O(1)
+      operation in this course from every O(n) one you'll meet starting with linear search in
+      Module 37.</p>
+    </div>
+  </details>
+</section>
+
+<section class="mod" id="m08">
+  <div class="modhead"><span class="modnum">08</span><h2>There Are No Dumb Questions</h2></div>
+
+  <div class="qa">
+    <p class="q">Why is Python's <code>get</code>/<code>set</code> API here, when real Python
+    code just writes <code>arr[i]</code>?</p>
+    <p class="a">Because this module's whole purpose is to make the mechanism explicit rather
+    than let square-bracket syntax hide it. <code>arr[i]</code> in real Python calls a special
+    method (<code>__getitem__</code>) that could, in principle, do exactly what
+    <code>get()</code> does here — this course just isn't ready to introduce Python's
+    "dunder" method protocol yet, so the bounds-checking logic is a plain named method instead.
+    Nothing about the underlying idea changes.</p>
+  </div>
+
+  <div class="qa">
+    <p class="q">The C demo leaves <code>data[]</code> uninitialized. Isn't reading
+    uninitialized memory undefined behavior?</p>
+    <p class="a">Reading it directly, yes — but nothing in this module's public API lets a
+    caller do that. Every read goes through <code>array_get</code>, which refuses any index
+    <code>&gt;= length</code>, and <code>length</code> only ever grows one slot at a time as
+    <code>push</code> writes into it. So the uninitialized tail of <code>data[]</code> is
+    never reachable through this module's own functions — see
+    <a href="DECISIONS.md">DECISIONS.md #2</a> for why we chose not to pay to zero it anyway.</p>
+  </div>
+
+  <div class="qa">
+    <p class="q">Could this module's array just use <code>std::array&lt;int, 8&gt;</code> in
+    C++ instead of a raw <code>int[8]</code>?</p>
+    <p class="a">Yes, and idiomatic modern C++ would. We used a raw array here specifically so
+    the C and C++ versions stay structurally close enough to compare line-for-line — once that
+    comparison has done its job, later C++ modules lean on standard-library types more freely.
+    This is a deliberate, one-time teaching tradeoff, not a recommendation to avoid
+    <code>std::array</code> in real code.</p>
+  </div>
+
+  <div class="qa">
+    <p class="q">If capacity is fixed at 8 everywhere, how would I ever use this for real
+    data?</p>
+    <p class="a">You wouldn't, on purpose — that's not a flaw this module missed, it's the
+    exact wall Module 03 exists to knock down. Everything you've verified here (contiguous
+    layout, O(1) access, a hard capacity limit) is still true of the dynamic array Module 03
+    builds; the only thing that changes is what happens the instant that limit is hit.</p>
+  </div>
+</section>
+
+<section class="mod" id="m09">
+  <div class="modhead"><span class="modnum">09</span><h2>What's Next</h2></div>
+  <p>Module 03 takes this exact structure and asks one question: what if, the moment
+  <code>push</code> would fail, the array quietly allocated a bigger block of memory, copied
+  everything over, and kept going? That single change — and its real cost, measured rather
+  than assumed — is what turns this module's parking garage into something that can expand.</p>
+</section>
+
+<div class="stepnav">
+  <div><a href="../01_memory_and_addresses/tutorial.html">← Module 01 — Memory &amp; Addresses</a></div>
+  <div class="next"><a href="../03_dynamic_array/tutorial.html">Next: Module 03 — The Dynamic Array →</a></div>
+</div>
+
+</div>
+</body>
+</html>
