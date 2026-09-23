@@ -6,7 +6,7 @@
  * Same growth policy as the C source: capacity starts at 0 (nothing is
  * allocated until the first push), and every time `length === capacity`,
  * `grow()` allocates a block exactly TWICE as large, copies every
- * existing element into it, then the old block is discarded — the same
+ * existing element into it, then the old block is discarded, the same
  * doubling policy, the same "copy every existing element" cost per
  * resize, the same amortized-O(1) push described in dynamic_array.h:
  *

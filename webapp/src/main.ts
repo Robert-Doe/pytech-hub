@@ -58,7 +58,7 @@ app.innerHTML = `
     </div>
 
     <footer>
-      <span>PyTech Hub — course-companion demo</span>
+      <span>PyTech Hub, course-companion demo</span>
       <span>Dynamic array growth, ported faithfully from the C source</span>
     </footer>
   </div>
@@ -106,7 +106,7 @@ function render(result: PushResult | null): void {
     return;
   }
 
-  currentBlockLabel.textContent = `Backing array — capacity ${capacity} (${length} in use)`;
+  currentBlockLabel.textContent = `Backing array, capacity ${capacity} (${length} in use)`;
 
   if (result) {
     const slotsHtml = result.slots
@@ -136,7 +136,7 @@ function showReallocationEvent(result: PushResult): void {
   const oldSlotsHtml = result.before.map((s) => renderSlot(s, 'freed')).join('');
   oldBlockSlot.innerHTML = `
     <div class="old-block-wrap">
-      <div class="block-label">Old block (capacity ${result.oldCapacity}) — freed after copy</div>
+      <div class="block-label">Old block (capacity ${result.oldCapacity}), freed after copy</div>
       <div class="array-grid">${oldSlotsHtml}</div>
       <div class="arrow-down">&darr; every element copied into the new, larger block below &darr;</div>
     </div>
